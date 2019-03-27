@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="MiningWorld:jar">
+    <output-path>Z:/</output-path>
+    <root id="archive" name="MiningWorld.jar">
+      <element id="module-output" name="MiningWorld" />
+    </root>
+  </artifact>
+</component>

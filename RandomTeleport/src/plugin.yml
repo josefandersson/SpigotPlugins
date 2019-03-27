@@ -1,0 +1,17 @@
+name: RandomTeleport
+description: Teleport the player in a radom direction at a random distance.
+version: 1.1
+author: DrDoof
+main: org.josefadventures.randomteleport.RandomTeleport
+
+permissions:
+  randomteleport.teleport:
+    description: Permission to use the command.
+
+commands:
+  randomteleport:
+    description: Teleport randomly.
+    aliases: [rt]
+    usage: /randomteleport [max-radius=1000] [min-radius=50] [relative-ground=true|false|both]
+    permission: randomteleport.teleport
+    permission-message: You do not have permission to use this command.

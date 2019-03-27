@@ -1,0 +1,9 @@
+name: RedstoneGates
+description: Bring logic gates to redstone.
+version: 1.0
+author: DrDoof
+main: org.josefadventures.redstonegates.RedstoneGates
+
+permissions:
+  redstonegates.create:
+    description: Permission to place gates.

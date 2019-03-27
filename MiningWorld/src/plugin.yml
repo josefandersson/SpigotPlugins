@@ -1,0 +1,11 @@
+name: MiningWorld
+version: 1.0.2
+author: DrDoof
+main: org.josefadventures.miningworld.MiningWorld
+api-version: 1.13
+
+description: Restricts mining on the surface of a specified world.
+permissions:
+  miningworld.trusted:
+    description: Allowed to mine anything, anywhere in the specified world.
+    default: op

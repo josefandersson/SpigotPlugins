@@ -1,0 +1,34 @@
+name: TownyChunkLoader
+description: Allow players to keep chunks loaded within their own towns.
+version: 1.0
+author: DrDoof
+main: org.josefadventures.townychunkloader.TownyChunkLoader
+depend: [Towny]
+
+permissions:
+  townychunkloader.command:
+    description: Permissions to use the townychunkloader commands.
+  townychunkloader.command.list.all:
+    description: Permissions to list all chunk loaders on the server.
+  townychunkloader.command.here:
+    description: Permissions to check if current chunk is chunk loader.
+  townychunkloader.command.forcedelete:
+    description: Permission to delete others chunks. Admin command.
+  townychunkloader.list.all:
+    description: Permission to use the list all command.
+  townychunkloader.chunks.[num]:
+    description: The number of chunks this player are allowed to keep loaded.
+  townychunkloader.chunks.exempt:
+    description: Player can keep unlimited chunks loaded.
+  townychunkloader.time.[minutes]:
+    description: For how many minutes this players can keep chunks loaded without bumping.
+  townychunkloader.time.exempt:
+    description: Player can keep chunks loaded for an unlimited amount of time.
+
+commands:
+  townychunkloader:
+    description: Do stuff with the chunk loader plugin.
+    aliases: [chunkloader,cl,tcl]
+    usage: /townychunkloader help
+    permission: townychunkloader.command
+    permission-message: You do not have permission to use this command.

@@ -1,0 +1,24 @@
+name: CommandTriggers
+description: Makes actions trigger commands.
+version: 1.0
+author: DrDoof
+main: org.josefadventures.commandtriggers.CommandTriggers
+depend: [Multiverse-Core]
+
+permissions:
+  commandtriggers.use:
+    description: Permission to trigger commands.
+  commandtriggers.create:
+    description: Permission to create triggers for commands.
+
+commands:
+  trigger:
+    description: Gives user a "Trigger Creation Tool" with the given command.
+    usage: /trigger "<command-to-trigger> [command-args...]"
+    permission: commandtriggers.create
+    permission-message: You do not have permission to use this command.
+  triggerlist:
+    description: Lists all triggers.
+    usage: /triggerlist
+    permission: commandtriggers.list
+    permission-message: You do no have permission to use this command.

@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="RandomTeleport:jar">
+    <output-path>Z:/</output-path>
+    <root id="archive" name="RandomTeleport.jar">
+      <element id="module-output" name="RandomTeleport" />
+    </root>
+  </artifact>
+</component>

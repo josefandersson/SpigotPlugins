@@ -1,0 +1,1 @@
+CraftBukkit/Bukkit/Spigot plugins developed by Josef Andersson (AKA DrDoof).
