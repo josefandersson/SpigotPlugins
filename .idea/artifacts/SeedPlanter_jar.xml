@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="SeedPlanter:jar">
+    <output-path>Z:/</output-path>
+    <root id="archive" name="SeedPlanter.jar">
+      <element id="module-output" name="SeedPlanter" />
+    </root>
+  </artifact>
+</component>

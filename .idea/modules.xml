@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/MiningWorld/MiningWorld.iml" filepath="$PROJECT_DIR$/MiningWorld/MiningWorld.iml" />
       <module fileurl="file://$PROJECT_DIR$/RandomTeleport/RandomTeleport.iml" filepath="$PROJECT_DIR$/RandomTeleport/RandomTeleport.iml" />
       <module fileurl="file://$PROJECT_DIR$/RedstoneGates/RedstoneGates.iml" filepath="$PROJECT_DIR$/RedstoneGates/RedstoneGates.iml" />
+      <module fileurl="file://$PROJECT_DIR$/SeedPlanter/SeedPlanter.iml" filepath="$PROJECT_DIR$/SeedPlanter/SeedPlanter.iml" />
       <module fileurl="file://$PROJECT_DIR$/SpigotPlugins.iml" filepath="$PROJECT_DIR$/SpigotPlugins.iml" />
       <module fileurl="file://$PROJECT_DIR$/TownyChunkLoader/TownyChunkLoader.iml" filepath="$PROJECT_DIR$/TownyChunkLoader/TownyChunkLoader.iml" />
       <module fileurl="file://$PROJECT_DIR$/TownyFly/TownyFly.iml" filepath="$PROJECT_DIR$/TownyFly/TownyFly.iml" />

@@ -1,0 +1,10 @@
+name: SeedPlanter
+description: Helps you plant your seeds.
+version: 1.0
+author: DrDoof
+main: org.josefadventures.seedplanter.SeedPlanter
+api-version: 1.13
+
+permissions:
+  seedplanter.plant:
+    description: Allows you to use the plugin.
