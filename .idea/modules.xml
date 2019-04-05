@@ -10,6 +10,7 @@
       <module fileurl="file://$PROJECT_DIR$/SpigotPlugins.iml" filepath="$PROJECT_DIR$/SpigotPlugins.iml" />
       <module fileurl="file://$PROJECT_DIR$/TownyChunkLoader/TownyChunkLoader.iml" filepath="$PROJECT_DIR$/TownyChunkLoader/TownyChunkLoader.iml" />
       <module fileurl="file://$PROJECT_DIR$/TownyFly/TownyFly.iml" filepath="$PROJECT_DIR$/TownyFly/TownyFly.iml" />
+      <module fileurl="file://$PROJECT_DIR$/VoteListener/VoteListener.iml" filepath="$PROJECT_DIR$/VoteListener/VoteListener.iml" />
     </modules>
   </component>
 </project>

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
-      <artifact name="TownyFly:jar" />
+      <artifact name="VoteListener:jar" />
     </artifacts-to-build>
   </component>
   <component name="BookmarkManager">
@@ -10,15 +10,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b5bef02a-94ad-4de0-984a-9beabfe444a1" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/SeedPlanter/readme.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/VoteListener/VoteListener.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/PlayerData.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteData.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteListener.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/VoteListener/src/plugin.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RandomTeleport/RandomTeleport.iml" beforeDir="false" afterPath="$PROJECT_DIR$/RandomTeleport/RandomTeleport.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RandomTeleport/src/org/josefadventures/randomteleport/RandomTeleport.java" beforeDir="false" afterPath="$PROJECT_DIR$/RandomTeleport/src/org/josefadventures/randomteleport/RandomTeleport.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RandomTeleport/src/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/RandomTeleport/src/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SeedPlanter/src/org/josefadventures/seedplanter/SeedPlanter.java" beforeDir="false" afterPath="$PROJECT_DIR$/SeedPlanter/src/org/josefadventures/seedplanter/SeedPlanter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SeedPlanter/src/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/SeedPlanter/src/plugin.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TownyFly/src/org/josefadventures/townyfly/TownyFly.java" beforeDir="false" afterPath="$PROJECT_DIR$/TownyFly/src/org/josefadventures/townyfly/TownyFly.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TownyFly/src/plugin.yml" beforeDir="false" afterPath="$PROJECT_DIR$/TownyFly/src/plugin.yml" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/out/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -33,12 +31,76 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/TownyChunkLoader.java">
+        <entry file="file://$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteListener.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="284">
-              <caret line="43" column="26" selection-start-line="43" selection-start-column="26" selection-end-line="43" selection-end-column="26" />
+            <state relative-caret-position="376">
+              <caret line="65" column="52" lean-forward="true" selection-start-line="65" selection-start-column="52" selection-end-line="65" selection-end-column="52" />
               <folding>
                 <element signature="imports" expanded="true" />
+                <element signature="e#1861#1893#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/MiningWorld/src/org/josefadventures/miningworld/MiningWorld.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="813">
+              <caret line="58" column="41" lean-forward="true" selection-start-line="58" selection-start-column="41" selection-end-line="58" selection-end-column="41" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#5143#5144#0" expanded="true" />
+                <element signature="e#5198#5199#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/VoteListener/src/plugin.yml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="115">
+              <caret line="5" column="77" selection-start-line="5" selection-start-column="77" selection-end-line="5" selection-end-column="77" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteData.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="621">
+              <caret line="30" lean-forward="true" selection-start-line="30" selection-end-line="30" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/CommandTriggers/src/org/josefadventures/commandtriggers/CommandTriggers.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-3724">
+              <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/PlayerData.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="652">
+              <caret line="48" selection-start-line="48" selection-end-line="48" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#883#884#0" expanded="true" />
+                <element signature="e#943#944#0" expanded="true" />
+                <element signature="e#997#998#0" expanded="true" />
+                <element signature="e#1071#1072#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -152,6 +214,11 @@
         <option value="$PROJECT_DIR$/RandomTeleport/src/org/josefadventures/randomteleport/RandomTeleport.java" />
         <option value="$PROJECT_DIR$/TownyFly/src/plugin.yml" />
         <option value="$PROJECT_DIR$/TownyFly/src/org/josefadventures/townyfly/TownyFly.java" />
+        <option value="$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/EventHandler.java" />
+        <option value="$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/PlayerData.java" />
+        <option value="$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteData.java" />
+        <option value="$PROJECT_DIR$/VoteListener/src/plugin.yml" />
+        <option value="$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteListener.java" />
       </list>
     </option>
   </component>
@@ -170,7 +237,6 @@
     </navigator>
     <panes>
       <pane id="PackagesPane" />
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -181,60 +247,87 @@
             <path>
               <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
               <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
-              <item name="RandomTeleport" type="462c0819:PsiDirectoryNode" />
+              <item name="CommandTriggers" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
               <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
-              <item name="RandomTeleport" type="462c0819:PsiDirectoryNode" />
+              <item name="CommandTriggers" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
               <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
-              <item name="RandomTeleport" type="462c0819:PsiDirectoryNode" />
+              <item name="CommandTriggers" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="randomteleport" type="462c0819:PsiDirectoryNode" />
+              <item name="commandtriggers" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
               <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
-              <item name="TownyFly" type="462c0819:PsiDirectoryNode" />
+              <item name="CommandTriggers" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="commandtriggers" type="462c0819:PsiDirectoryNode" />
+              <item name="CommandTriggers.java" type="529ef68f:ClassesTreeStructureProvider$PsiClassOwnerTreeNode" />
             </path>
             <path>
               <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
               <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
-              <item name="TownyFly" type="462c0819:PsiDirectoryNode" />
+              <item name="MiningWorld" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
+              <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
+              <item name="MiningWorld" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
               <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
-              <item name="TownyFly" type="462c0819:PsiDirectoryNode" />
+              <item name="MiningWorld" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="townyfly" type="462c0819:PsiDirectoryNode" />
+              <item name="miningworld" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
+              <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
+              <item name="VoteListener" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
+              <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
+              <item name="VoteListener" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="SpigotPlugins" type="b2602c69:ProjectViewProjectNode" />
+              <item name="SpigotPlugins" type="462c0819:PsiDirectoryNode" />
+              <item name="VoteListener" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="votelistener" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1554156978104" />
-    <property name="last_opened_file_path" value="Z:/plugins/EssentialsX-2.16.1.80.jar!/" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/VoteListener/src" />
     <property name="project.structure.last.edited" value="Artifacts" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="E:\Programmering\Java\SpigotPlugins\VoteListener\src" />
       <recent name="E:\Programmering\Java\SpigotPlugins\SeedPlanter\src" />
       <recent name="E:\Programmering\Java\SpigotPlugins\RedstoneGates\src" />
       <recent name="E:\Programmering\Java\SpigotPlugins\ChunkLoader\src" />
       <recent name="E:\Programmering\Java\SpigotPlugins\CommandTriggers\src" />
-      <recent name="E:\Programmering\Java\SpigotPlugins\MiningWorld\src" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -265,7 +358,7 @@
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.16897655" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1705757" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -307,32 +400,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/MiningWorld/src/org/josefadventures/miningworld/MiningWorld.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1334">
-          <caret line="58" column="41" lean-forward="true" selection-start-line="58" selection-start-column="41" selection-end-line="58" selection-end-column="41" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#5143#5144#0" expanded="true" />
-            <element signature="e#5198#5199#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CommandTriggers/src/plugin.yml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="115">
           <caret line="5" column="25" selection-start-line="5" selection-start-column="25" selection-end-line="5" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/CommandTriggers/src/org/josefadventures/commandtriggers/CommandTriggers.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="790">
-          <caret line="254" column="24" selection-start-line="254" selection-start-column="24" selection-end-line="254" selection-end-column="24" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -491,45 +562,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/ChunkLoaderv1.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2944">
-          <caret line="136" column="36" selection-start-line="132" selection-start-column="16" selection-end-line="136" selection-end-column="36" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/ChunkLoader.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="115">
-          <caret line="5" column="26" selection-start-line="5" selection-start-column="26" selection-end-line="5" selection-end-column="26" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/TickableBlock.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1058">
-          <caret line="49" column="8" selection-start-line="49" selection-start-column="8" selection-end-line="49" selection-end-column="8" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="method#locationToIntPosition#0;class#TickableBlock#0" />
-            <element signature="method#intPositionToVector#0;class#TickableBlock#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/TickableChunk.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="828">
-          <caret line="43" selection-start-line="43" selection-end-line="43" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/SeedPlanter/src/plugin.yml">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="46">
@@ -595,10 +627,125 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/TownyChunkLoader.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="284">
-          <caret line="43" column="26" selection-start-line="43" selection-start-column="26" selection-end-line="43" selection-end-column="26" />
+        <state relative-caret-position="238">
+          <caret line="41" column="30" selection-start-line="41" selection-start-column="30" selection-end-line="41" selection-end-column="30" />
           <folding>
             <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/ChunkLoaderv1.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2944">
+          <caret line="136" column="36" selection-start-line="132" selection-start-column="16" selection-end-line="136" selection-end-column="36" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/ChunkLoader.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="115">
+          <caret line="5" column="26" selection-start-line="5" selection-start-column="26" selection-end-line="5" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/TickableBlock.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1058">
+          <caret line="49" column="8" selection-start-line="49" selection-start-column="8" selection-end-line="49" selection-end-column="8" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="method#locationToIntPosition#0;class#TickableBlock#0" />
+            <element signature="method#intPositionToVector#0;class#TickableBlock#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/TownyChunkLoader/src/org/josefadventures/townychunkloader/TickableChunk.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="828">
+          <caret line="43" selection-start-line="43" selection-end-line="43" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/EventHandler.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="322">
+          <caret line="14" selection-start-line="14" selection-end-line="14" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#315#316#0" expanded="true" />
+            <element signature="e#350#351#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/CommandTriggers/src/org/josefadventures/commandtriggers/CommandTriggers.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3724">
+          <caret line="18" column="13" selection-start-line="18" selection-start-column="13" selection-end-line="18" selection-end-column="13" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteData.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="621">
+          <caret line="30" lean-forward="true" selection-start-line="30" selection-end-line="30" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/PlayerData.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="652">
+          <caret line="48" selection-start-line="48" selection-end-line="48" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#883#884#0" expanded="true" />
+            <element signature="e#943#944#0" expanded="true" />
+            <element signature="e#997#998#0" expanded="true" />
+            <element signature="e#1071#1072#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/VoteListener/src/plugin.yml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="115">
+          <caret line="5" column="77" selection-start-line="5" selection-start-column="77" selection-end-line="5" selection-end-column="77" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/MiningWorld/src/org/josefadventures/miningworld/MiningWorld.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="813">
+          <caret line="58" column="41" lean-forward="true" selection-start-line="58" selection-start-column="41" selection-end-line="58" selection-end-column="41" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#5143#5144#0" expanded="true" />
+            <element signature="e#5198#5199#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/VoteListener/src/org/josefadventures/votelistener/VoteListener.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="376">
+          <caret line="65" column="52" lean-forward="true" selection-start-line="65" selection-start-column="52" selection-end-line="65" selection-end-column="52" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#1861#1893#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -609,7 +756,7 @@
       <state key="ArtifactsStructureConfigurable.UI">
         <settings>
           <artifact-editor />
-          <last-edited>RandomTeleport:jar</last-edited>
+          <last-edited>VoteListener:jar</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
@@ -657,7 +804,7 @@
       </state>
       <state key="ModuleStructureConfigurable.UI">
         <settings>
-          <last-edited>RandomTeleport</last-edited>
+          <last-edited>VoteListener</last-edited>
           <splitter-proportions>
             <option name="proportions">
               <list>
