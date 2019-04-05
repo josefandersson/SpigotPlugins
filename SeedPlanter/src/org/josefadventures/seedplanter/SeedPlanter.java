@@ -3,10 +3,12 @@ package org.josefadventures.seedplanter;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -32,6 +34,7 @@ public class SeedPlanter extends JavaPlugin implements Listener {
     private int maxSpread = 8;
     private int maxPlant = 64;
     private int tickDelay = 1;
+    private int plantPerTick = 1;
 
     @Override
     public void onEnable() {
@@ -43,9 +46,18 @@ public class SeedPlanter extends JavaPlugin implements Listener {
 
         this.maxSpread = this.getConfig().getInt("maxSpread");
         this.maxPlant = this.getConfig().getInt("maxPlant");
-        this.tickDelay = this.getConfig().getInt("tickDelay");
+
+        double tickDel = this.getConfig().getDouble("tickDelay");
+        if (tickDel < 1) {
+            this.tickDelay = 1;
+            this.plantPerTick = (int) (1 / tickDel);
+        } else {
+            this.tickDelay = (int) tickDel;
+        }
 
         this.getServer().getPluginManager().registerEvents(this, this);
+
+        this.getLogger().info("Allowing spread of " + this.maxSpread + " blocks, maximum of " + this.maxPlant + " plants planted, with a delay of " + this.tickDelay + " and planting " + this.plantPerTick + " seeds every update.");
     }
 
     @EventHandler
@@ -71,6 +83,7 @@ public class SeedPlanter extends JavaPlugin implements Listener {
     class Planter {
         private Block source;
         private Material sourceMaterial;
+        private Material seedMaterial;
         private Player player;
         private EquipmentSlot slot;
 
@@ -79,6 +92,7 @@ public class SeedPlanter extends JavaPlugin implements Listener {
 
         private int planted = 0;
         private ArrayList<Integer> been;
+        private ArrayList<Integer> disallowed; // when player can't place block there due to other plugins cancelling event
 
         Planter(Block source, Player player, EquipmentSlot slot) {
             this.source = source;
@@ -86,7 +100,14 @@ public class SeedPlanter extends JavaPlugin implements Listener {
             this.slot = slot;
             this.sourceMaterial = this.source.getType();
 
+            if (slot == EquipmentSlot.HAND) {
+                this.seedMaterial = player.getInventory().getItemInMainHand().getType();
+            } else if (slot == EquipmentSlot.OFF_HAND) {
+                this.seedMaterial = player.getInventory().getItemInOffHand().getType();
+            }
+
             this.been = new ArrayList<>();
+            this.disallowed = new ArrayList<>();
         }
 
         public void cancel() {
@@ -109,7 +130,11 @@ public class SeedPlanter extends JavaPlugin implements Listener {
                 itemStack = this.player.getInventory().getItemInOffHand();
             }
 
-            return itemStack;
+            if (itemStack != null && itemStack.getType().equals(this.seedMaterial)) {
+                return itemStack;
+            } else {
+                return null;
+            }
         }
 
         public void onTick() {
@@ -118,12 +143,16 @@ public class SeedPlanter extends JavaPlugin implements Listener {
                 return;
             }
 
-            if (this.plantNext()) {
-                if (this.planted >= maxPlant) {
+            for (int i = 0; i < plantPerTick; i++) {
+                if (this.plantNext()) {
+                    if (this.planted >= maxPlant) {
+                        this.cancel();
+                        return;
+                    }
+                } else {
                     this.cancel();
+                    return;
                 }
-            } else {
-                this.cancel();
             }
         }
 
@@ -133,9 +162,21 @@ public class SeedPlanter extends JavaPlugin implements Listener {
                 this.been.clear();
                 Block nextBlock = this.floodFind(0, 0, 0, 0);
                 if (nextBlock != null) {
+                    BlockState oldState = nextBlock.getState();
                     nextBlock.setType(this.sourceMaterial);
+
+                    BlockPlaceEvent event = new BlockPlaceEvent(oldState.getBlock(), oldState, nextBlock, itemStack, this.player, true, this.slot);
+                    getServer().getPluginManager().callEvent(event);
+
+                    if (event.isCancelled()) {
+                        oldState.update(true); // revert to old block
+                        this.disallowed.add(nextBlock.getX() * (maxSpread + 1) * 2 + nextBlock.getZ());
+                        return false;
+                    }
+
                     itemStack.setAmount(itemStack.getAmount() - 1);
                     this.planted++;
+
                     return true;
                 }
             }
@@ -148,7 +189,8 @@ public class SeedPlanter extends JavaPlugin implements Listener {
                 return null;
 
             int hereId = x * (maxSpread + 1) * 2 + z;
-            if (this.been.contains(hereId))
+            if (this.been.contains(hereId)
+                    || this.disallowed.contains(hereId))
                 return  null;
             else
                 this.been.add(hereId);

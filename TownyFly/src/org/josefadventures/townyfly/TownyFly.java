@@ -12,7 +12,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -22,10 +24,11 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-public class TownyFly extends JavaPlugin implements Listener {
+public class TownyFly extends JavaPlugin implements Listener, CommandExecutor {
 
 	private final String TOGGLE_SELF = "townyfly.toggle.self";
 	private final String TOGGLE_OTHERS = "townyfly.toggle.others";
@@ -65,6 +68,7 @@ public class TownyFly extends JavaPlugin implements Listener {
 		this.disableMessage = this.config.getString("disableMessage");
 		this.enableMessage = this.config.getString("enableMessage");
 
+		this.getCommand("townyfly").setExecutor(this);
 	}
 	
 	@Override
@@ -154,6 +158,7 @@ public class TownyFly extends JavaPlugin implements Listener {
 		return this.playersWithTFly.contains(player.getUniqueId());
 	}
 
+	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (args.length > 0) {
 			if (sender.hasPermission(TOGGLE_OTHERS)) {
@@ -174,7 +179,7 @@ public class TownyFly extends JavaPlugin implements Listener {
 			}
 		}
 
-		sender.sendMessage(cmd.getPermissionMessage());
+		sender.sendMessage(ChatColor.DARK_RED + "You do not have permission to use this command.");
 		return true;
 	}
 

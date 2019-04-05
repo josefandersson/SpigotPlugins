@@ -1,11 +1,16 @@
 package org.josefadventures.randomteleport;
 
+import com.earth2me.essentials.Essentials;
+import com.earth2me.essentials.Teleport;
+import com.earth2me.essentials.User;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
@@ -25,9 +30,19 @@ public class RandomTeleport extends JavaPlugin implements Listener {
             "WATER"
     };
 
+    private Teleporter teleporter;
+
     @Override
     public void onEnable() {
+        Essentials essentials = (Essentials) this.getServer().getPluginManager().getPlugin("Essentials");
 
+        if (essentials == null) {
+            System.out.println("Default teleporter");
+            this.teleporter = new DefaultTeleporter();
+        } else {
+            System.out.println("Essentials teleporter");
+            this.teleporter = new EssentialsTeleporter(essentials);
+        }
     }
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -49,7 +64,7 @@ public class RandomTeleport extends JavaPlugin implements Listener {
                 max = Integer.parseInt(args[0]);
         }
 
-        if (this.teleportPlayer((Player) sender, min, max, relGr)) {
+        if (this.teleporter.teleportPlayer((Player) sender, min, max, relGr)) {
             sender.sendMessage("Swoosh...");
         } else {
             sender.sendMessage("Something went wrong");
@@ -59,9 +74,9 @@ public class RandomTeleport extends JavaPlugin implements Listener {
     }
 
     // returns true if success
-    private boolean teleportPlayer(Player player, int min, int max, String relGround) {
+    private Location randomLocation(Player player, int min, int max, String relGround) {
         if (player == null)
-            return false;
+            return null;
 
         boolean aboveGround;
 
@@ -72,10 +87,8 @@ public class RandomTeleport extends JavaPlugin implements Listener {
         } else if (relGround.equalsIgnoreCase("both")) {
             aboveGround = new Random().nextBoolean();
         } else {
-            return false;
+            return null;
         }
-
-        this.getLogger().info("aboveGround: " + aboveGround);
 
         for (int i = 0; i < MAX_TRIES; i++) {
             Location loc = this.randomLocation(player.getLocation().toVector(), min, max).toLocation(player.getWorld());
@@ -86,9 +99,7 @@ public class RandomTeleport extends JavaPlugin implements Listener {
                     loc.subtract(0, 1, 0);
                     if (loc.getBlock().getType() != Material.AIR) {
                         if (this.isMaterialAllowed(loc.getBlock().getType())) {
-                            loc.add(0, 1, 0);
-                            player.teleport(loc);
-                            return true;
+                            return loc.add(0, 1, 0);
                         }
                         break;
                     }
@@ -108,8 +119,7 @@ public class RandomTeleport extends JavaPlugin implements Listener {
                         } else {
                             if (numAir >= 3) {
                                 if (this.isMaterialAllowed(loc.getBlock().getType())) {
-                                    player.teleport(loc.add(0, 1, 0));
-                                    return true;
+                                    return loc.add(0, 1, 0);
                                 }
                             }
                             numAir = 0;
@@ -119,7 +129,7 @@ public class RandomTeleport extends JavaPlugin implements Listener {
             }
         }
 
-        return false;
+        return null;
     }
 
     private Vector randomLocation(Vector origin, int min, int max) {
@@ -139,6 +149,52 @@ public class RandomTeleport extends JavaPlugin implements Listener {
             }
         }
         return true;
+    }
+
+    interface Teleporter {
+        boolean teleportPlayer(Player player, int min, int max, String relGround);
+    }
+
+    class DefaultTeleporter implements Teleporter {
+        @Override
+        public boolean teleportPlayer(Player player, int min, int max, String relGround) {
+            Location location = randomLocation(player, min, max, relGround);
+
+            if (location != null) {
+                player.teleport(location);
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    class EssentialsTeleporter implements Teleporter {
+        private Essentials essentials;
+
+        public EssentialsTeleporter(Essentials essentials) {
+            this.essentials = essentials;
+        }
+
+        @Override
+        public boolean teleportPlayer(Player player, int min, int max, String relGround) {
+            Location location = randomLocation(player, min, max, relGround);
+
+            if (location != null) {
+                // TODO: Essentials teleportation not working? Not waiting for delays. There is however a delay afterwards for the next teleport.
+                Teleport teleport = this.essentials.getUser(player).getTeleport();
+                try {
+                    teleport.cooldown(true);
+                    teleport.teleport(location, null);
+                    return true;
+                } catch (Exception e) {
+                    player.sendMessage(ChatColor.RED + "Error: " + e.getMessage());
+                    return false;
+                }
+            }
+
+            return false;
+        }
     }
 
 }
