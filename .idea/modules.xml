@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CommandTriggers/CommandTriggers.iml" filepath="$PROJECT_DIR$/CommandTriggers/CommandTriggers.iml" />
       <module fileurl="file://$PROJECT_DIR$/MiningWorld/MiningWorld.iml" filepath="$PROJECT_DIR$/MiningWorld/MiningWorld.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Parkour/Parkour.iml" filepath="$PROJECT_DIR$/Parkour/Parkour.iml" />
       <module fileurl="file://$PROJECT_DIR$/RandomTeleport/RandomTeleport.iml" filepath="$PROJECT_DIR$/RandomTeleport/RandomTeleport.iml" />
       <module fileurl="file://$PROJECT_DIR$/RedstoneGates/RedstoneGates.iml" filepath="$PROJECT_DIR$/RedstoneGates/RedstoneGates.iml" />
       <module fileurl="file://$PROJECT_DIR$/SeedPlanter/SeedPlanter.iml" filepath="$PROJECT_DIR$/SeedPlanter/SeedPlanter.iml" />

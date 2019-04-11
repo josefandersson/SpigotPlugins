@@ -1,0 +1,6 @@
+name: Parkour
+version: 1.0.0
+author: DrDoof
+main: org.josefadventures.parkour.Parkour
+api-version: 1.13
+description: Allows for the creation of parkour courses with checkpoints and highscores.
