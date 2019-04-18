@@ -3,4 +3,14 @@ version: 1.0
 author: DrDoof
 main: org.josefadventures.votelistener.VoteListener
 api-version: 1.13
-description: Listens to Votifier events and executes commands when players vote.
+description: Listens to Votifier events and executes commands when players vote. Requires PostgreSQL.
+
+depend: [PostgreSQL]
+
+commands:
+  vote:
+    description: Get a list of links to vote on.
+    usage: /vote
+  votelistener:
+    description: Admin control over the plugin.
+    usage: /votelistener

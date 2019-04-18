@@ -1,0 +1,6 @@
+name: PostgreSQL
+version: 1.0
+author: DrDoof
+main: org.josefadventures.postgresql.PostgreSQL
+api-version: 1.13
+description: Implements the PostgreSQL driver library and allows other plugins to use it.
