@@ -1,27 +1,38 @@
 package org.josefadventures.votelistener;
 
 import com.vexsoftware.votifier.model.VotifierEvent;
+import io.netty.handler.codec.http.HttpContentEncoder;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
+import javax.security.auth.login.Configuration;
 import java.sql.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 
+class RewardCommand {
+    String command;
+    boolean runAsConsole;
+    boolean runAsOp;
+    String require;
+    int runAfterHours;
+    String infoMessage;
+}
+
 public class VoteListener extends JavaPlugin implements Listener {
-
-    // TODO: fix rewards!! commands should be able to run from either console or voter (as temp OP) and commands should be able to be put on a timer (database trigger) (ie permission nodes disappearing after 24h)
-
-    public static VoteListener instance;
 
     private Connection connection;
 
@@ -30,35 +41,65 @@ public class VoteListener extends JavaPlugin implements Listener {
     private String conUser = "";
     private String conPass = "";
 
-    public String broadcastVotedMessage = "§6Someone voted for the server and got §c$25§6! Use §c/vote §6and do the same.";
-    public String playerRewardMessage = "§6You voted and got §c$25§6!";
-    public String playerLostRewardMessage;
-    public String playerNotifyMessage;
+    private String msgVoteReward = "§6You voted and got §c$25§6!";
+    private String msgBroadcastVoted = "§1%player_name% §bvoted for the server and received §1$25§b!";
+    private String msgVoteCmd = "§bClick on a link to vote and be rewarded with §1$25§b.";
+    private String msgVoteCmdCanVote = "§aCan vote: §2%service_name% §a- §2%service_link%";
+    private String msgVoteCmdCannotVote = "§cAlready voted: §4%service_name% §c- §4%service_link%";
 
-    public List<String> commands;
+    private ArrayList<RewardCommand> commands;
+    private BukkitTask rewardTask;
 
     @Override
     public void onEnable() {
-        instance = this;
+        getConfig().addDefault("msgBroadcastVoted", this.msgBroadcastVoted);
+        getConfig().addDefault("msgVoteReward", this.msgVoteReward);
+        getConfig().addDefault("msgVoteCmd", this.msgVoteCmd);
+        getConfig().addDefault("msgVoteCmdCanVote", this.msgVoteCmdCanVote);
+        getConfig().addDefault("msgVoteCmdCannotVote", this.msgVoteCmdCannotVote);
 
-        this.getConfig().addDefault("broadcastVotedMessage", this.broadcastVotedMessage);
-        this.getConfig().addDefault("playerRewardMessage", this.playerRewardMessage);
-        this.getConfig().addDefault("playerLostRewardMessage", this.playerLostRewardMessage);
-        this.getConfig().addDefault("playerNotifyMessage", this.playerNotifyMessage);
-        this.getConfig().addDefault("commands", new String[] {});
+        if (!getConfig().isConfigurationSection("commands")) {
+            getConfig().addDefault("commands.example.runAsConsole", true);
+            getConfig().addDefault("commands.example.runAsOp", true);
+            getConfig().addDefault("commands.example.command", "example %player_name% 2 Golden_Apple");
+            getConfig().addDefault("commands.example.require", "votelistener.basicreward");
+            getConfig().addDefault("commands.example.runAfterHours", 0);
+            getConfig().addDefault("commands.example.infoMessage", "You have received 2 Gold Apples!");
+        }
 
         getConfig().addDefault("postgresql_url", this.conUrl);
         getConfig().addDefault("postgresql_schema", this.conSchema);
         getConfig().addDefault("postgresql_username", this.conUser);
         getConfig().addDefault("postgresql_password", this.conPass);
-        this.getConfig().options().copyDefaults(true);
-        this.saveConfig();
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
-        this.broadcastVotedMessage = this.getConfig().getString("broadcastVotedMessage");
-        this.playerRewardMessage = this.getConfig().getString("playerRewardMessage");
-        this.playerLostRewardMessage = this.getConfig().getString("playerLostRewardMessage");
-        this.playerNotifyMessage = this.getConfig().getString("playerNotifyMessage");
-        this.commands = this.getConfig().getStringList("commands");
+        this.msgBroadcastVoted = getConfig().getString("msgBroadcastVoted");
+        this.msgVoteReward = getConfig().getString("msgVoteReward");
+        this.msgVoteCmd = getConfig().getString("msgVoteCmd");
+        this.msgVoteCmdCanVote = getConfig().getString("msgVoteCmdCanVote");
+        this.msgVoteCmdCannotVote = getConfig().getString("msgVoteCmdCannotVote");
+
+        this.commands = new ArrayList<>();
+
+        ConfigurationSection cs = getConfig().getConfigurationSection("commands");
+        if (cs != null) {
+            for (String key : cs.getKeys(false)) {
+                ConfigurationSection cmdSection = cs.getConfigurationSection(key);
+                if (cmdSection.isString("command")) {
+                    this.commands.add(new RewardCommand() {{
+                        this.command = cmdSection.getString("command");
+                        this.runAsConsole = cmdSection.getBoolean("runAsConsole", true);
+                        this.runAsOp = cmdSection.getBoolean("runAsOp", true);
+                        this.require = cmdSection.getString("require", null);
+                        this.runAfterHours = cmdSection.getInt("runAfterHours", 0);
+                        this.infoMessage = cmdSection.getString("infoMessage", null);
+                    }});
+                }
+            }
+        }
+
+        getLogger().info("Loaded " + this.commands.size() + " reward commands.");
 
         this.conUrl = getConfig().getString("postgresql_url");
         this.conSchema = getConfig().getString("postgresql_schema");
@@ -100,7 +141,7 @@ public class VoteListener extends JavaPlugin implements Listener {
                     return true;
                 }
 
-                sender.sendMessage("§Vote and receive rewards! (Green links = can vote, red links = already voted today.)");
+                sender.sendMessage(this.msgVoteCmd);
                 try {
                     PreparedStatement ps = this.connection
                             .prepareStatement("SELECT DISTINCT ON (name) name, url, interval, votes.timestamp AS timestamp " +
@@ -110,12 +151,11 @@ public class VoteListener extends JavaPlugin implements Listener {
                     ps.setString(1, ((Player) sender).getUniqueId().toString());
                     ResultSet rs = ps.executeQuery();
                     while (rs.next()) {
-
                         Timestamp timestamp = rs.getTimestamp("timestamp");
                         if (timestamp == null || timestamp.toInstant().plus(rs.getInt("interval"), ChronoUnit.HOURS).isBefore(Instant.now())) {
-                            sender.sendMessage("§2§n" + rs.getString("name") + " §r§2- §n" + rs.getString("url"));
+                            sender.sendMessage(format(rs.getString("name"), rs.getString("url"), this.msgVoteCmdCanVote));
                         } else {
-                            sender.sendMessage("§c§n" + rs.getString("name") + " §r§c- §n" + rs.getString("url"));
+                            sender.sendMessage(format(rs.getString("name"), rs.getString("url"), this.msgVoteCmdCannotVote));
                         }
                     }
                 } catch (SQLException ex) {
@@ -132,8 +172,10 @@ public class VoteListener extends JavaPlugin implements Listener {
                 switch (args[0].toLowerCase()) {
                     case "help":
                         sender.sendMessage("List of commands:");
-                        sender.sendMessage("/votelistener services <list|add|remove>");
-                        sender.sendMessage("/votelistener fakevote <username> <service_name>");
+                        sender.sendMessage("/votelistener services list - List voting services.");
+                        sender.sendMessage("/votelistener services add <service_name> <vote_url> [vote_interval_hours] [display_name] - Add voting service (service_name is CASE SENSITIVE!).");
+                        sender.sendMessage("/votelistener services remove <service_name> - Remove voting service.");
+                        sender.sendMessage("/votelistener fakevote <username> <service_name> - Cast a fake vote to test rewards.");
                         return true;
                     case "services":
                         if (args.length == 1) {
@@ -254,24 +296,168 @@ public class VoteListener extends JavaPlugin implements Listener {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                this.reward(event.getPlayer());
+                this.reward(event.getPlayer(), rs.getInt("id"));
                 rs.updateBoolean("rewarded", true);
                 rs.updateRow();
+            }
+
+            ps = this.connection.prepareStatement("SELECT * FROM vote_commands WHERE vote_id IN (SELECT id FROM votes WHERE player_id = (SELECT id FROM vote_players WHERE uuid = ?))",
+                    ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+            ps.setString(1, event.getPlayer().getUniqueId().toString());
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                String nCommand = rs.getString("command");
+                String nInfoMessage = rs.getString("infoMessage");
+                boolean nRunAsConsole = rs.getBoolean("runAsConsole");
+                boolean nRunAsOp = rs.getBoolean("runAsOp");
+
+                this.runRewardCommand(event.getPlayer(), new RewardCommand() {{
+                    this.command = nCommand;
+                    this.infoMessage = nInfoMessage;
+                    this.runAsConsole = nRunAsConsole;
+                    this.runAsOp = nRunAsOp;
+                }});
+
+                rs.deleteRow();
             }
         } catch (SQLException ex) {
             getLogger().log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
 
-    public static String format(Player player, String message) {
-        return message.replaceAll("%username%", player.getDisplayName());
+    private static String format(Player player, String message) {
+        return format(player.getDisplayName(), message);
     }
 
-    private void reward(Player player) {
-        player.sendMessage("§2You voted and will receive a reward!");
+    private static String format(String displayName, String message) {
+        return message.replaceAll("%player_name%", displayName);
+    }
 
-        for (String cmd : this.commands) {
-            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), format(player, cmd));
+    private static String format(String serviceName, String serviceLink, String message) {
+        return message.replaceAll("%service_name%", serviceName).replaceAll("%service_link%", serviceLink);
+    }
+
+    private void reward(Player player, int voteId) {
+        player.sendMessage(format(player, this.msgVoteReward));
+
+        for (RewardCommand cmd : this.commands) {
+            if (cmd.require == null || player.hasPermission(cmd.require)) {
+                if (cmd.runAfterHours == 0) {
+                    this.runRewardCommand(player, cmd);
+                } else {
+                    this.runRewardCommandLater(player, cmd, voteId);
+                }
+            }
+        }
+    }
+
+    private void runWaitingRewards() {
+        try {
+            PreparedStatement ps = this.connection.prepareStatement("SELECT DISTINCT ON (vote_commands.id) vote_commands.*, vote_players.uuid AS uuid " +
+                    "FROM vote_commands " +
+                    "LEFT JOIN vote_players ON vote_players.id = (SELECT player_id FROM votes WHERE votes.id = vote_commands.vote_id) " +
+                    "WHERE runAt <= ?",
+                    ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+            ps.setLong(1, System.currentTimeMillis());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Player player = Bukkit.getPlayer(UUID.fromString(rs.getString("uuid")));
+
+                if (player == null) {
+                    rs.updateBoolean("waitingForPlayerLogin", true);
+                    rs.updateRow();
+                } else {
+                    RewardCommand rc = new RewardCommand() {{
+                        this.command = rs.getString("command");
+                        this.infoMessage = rs.getString("infoMessage");
+                        this.runAsConsole = rs.getBoolean("runAsConsole");
+                        this.runAsOp = rs.getBoolean("runAsOp");
+                    }};
+
+                    this.runRewardCommand(player, rc);
+                    rs.deleteRow();
+                }
+            }
+        } catch (SQLException ex) {
+            getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+        }
+
+        this.updateRewardSchedule();
+    }
+
+    /**
+     * Update reward task schedule to run when the next reward command should be run.
+     */
+    private void updateRewardSchedule() {
+        try {
+            ResultSet rs = this.connection.prepareStatement("SELECT * FROM vote_commands WHERE waitingForPlayerLogin = false ORDER BY runAt ASC LIMIT 1")
+                    .executeQuery();
+            if (rs.next()) {
+                long runAt = rs.getLong("runAt");
+                long delta = runAt - System.currentTimeMillis();
+
+                if (delta < 0) {
+                    this.runWaitingRewards();
+                    return;
+                }
+
+                if (this.rewardTask != null) {
+                    this.rewardTask.cancel();
+                }
+
+                this.rewardTask = getServer().getScheduler().runTaskLater(this, this::runWaitingRewards, delta / 50 + 20); // 1 second extra wait for redundancy
+            } else {
+                if (this.rewardTask != null) {
+                    this.rewardTask.cancel();
+                    this.rewardTask = null;
+                }
+            }
+        } catch (SQLException ex) {
+            getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+        }
+    }
+
+    private void runRewardCommandLater(Player player, RewardCommand cmd, int voteId) {
+        try {
+            PreparedStatement ps = this.connection.prepareStatement(
+                    "INSERT INTO vote_commands (vote_id, player_id, runAt, command, runAsConsole, runAsOp, infoMessage) " +
+                    "VALUES (?, (SELECT player_id FROM votes WHERE id = ?), ?, ?, ?, ?, ?) ON CONFLICT (player_id, command) DO UPDATE SET runAt = EXCLUDED.runAt");
+            ps.setInt(1, voteId);
+            ps.setInt(2, voteId);
+            ps.setLong(3, System.currentTimeMillis() + cmd.runAfterHours * 3600000);
+            ps.setString(4, format(player, cmd.command));
+            ps.setBoolean(5, cmd.runAsConsole);
+            ps.setBoolean(6, cmd.runAsOp);
+            ps.setString(7, cmd.infoMessage);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+        }
+
+        this.updateRewardSchedule();
+    }
+
+    private void runRewardCommand(Player player, RewardCommand cmd) {
+        if (cmd.runAsConsole) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), format(player, cmd.command));
+        } else {
+            if (cmd.infoMessage != null) {
+                player.sendMessage(cmd.infoMessage);
+            }
+
+            if (cmd.runAsOp) {
+                boolean isOp = player.isOp();
+                player.setOp(true);
+                Bukkit.dispatchCommand(player, format(player, cmd.command));
+                player.setOp(isOp);
+            } else {
+                Bukkit.dispatchCommand(player, format(player, cmd.command));
+            }
+        }
+
+        if (cmd.infoMessage != null) {
+            player.sendMessage(format(player, cmd.infoMessage));
         }
     }
 
@@ -311,27 +497,31 @@ public class VoteListener extends JavaPlugin implements Listener {
                 ip.next();
             }
 
+
             Player onlinePlayer = offlinePlayer.getPlayer();
             boolean rewarded = false;
             if (onlinePlayer != null) {
-                this.reward(onlinePlayer);
                 rewarded = true;
             }
 
-            PreparedStatement ps = this.connection.prepareStatement("INSERT INTO votes (player_id, service_id, ip_id, rewarded) VALUES (?, ?, ?, ?)");
+            PreparedStatement ps = this.connection.prepareStatement("INSERT INTO votes (player_id, service_id, ip_id, rewarded) VALUES (?, ?, ?, ?) RETURNING id");
             ps.setInt(1, player.getInt("id"));
             ps.setInt(2, service.getInt("id"));
             ps.setInt(3, ip.getInt("id"));
             ps.setBoolean(4, rewarded);
-            ps.executeUpdate();
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+
+            if (rewarded) {
+                this.reward(onlinePlayer, rs.getInt("id"));
+            }
         } catch (SQLException ex) {
             getLogger().log(Level.SEVERE, ex.getMessage(), ex);
         }
 
-        // TODO: broadcast message to server
         for (Player otherPlayer : getServer().getOnlinePlayers()) {
             if (!otherPlayer.getUniqueId().equals(offlinePlayer.getUniqueId())) {
-                otherPlayer.sendMessage("§2A PLAYER VOTED AND GOT REWARDED!");
+                otherPlayer.sendMessage(format(username, this.msgBroadcastVoted));
             }
         }
     }
@@ -371,14 +561,16 @@ public class VoteListener extends JavaPlugin implements Listener {
             // vote_players - id, uuid
             // vote_services - id, name, url, interval=24
             // vote_ips - id, address
-            // votes - player_id, service_id, ip_id, timestamp
+            // votes - id, player_id, service_id, ip_id, timestamp
+            // vote_commands - vote_id, command, runAt (timestamp), waitingForPlayerLogin
 
             Statement statement = this.connection.createStatement();
             statement.addBatch("CREATE SCHEMA IF NOT EXISTS " + schema + " AUTHORIZATION " + username);
             statement.addBatch("CREATE TABLE IF NOT EXISTS vote_players ( id SERIAL, uuid VARCHAR NOT NULL, PRIMARY KEY(id) )");
-            statement.addBatch("CREATE TABLE IF NOT EXISTS vote_services ( id SERIAL, name VARCHAR UNIQUE NOT NULL, url VARCHAR NOT NULL, interval INTEGER DEFAULT 24, PRIMARY KEY(id) )");
+            statement.addBatch("CREATE TABLE IF NOT EXISTS vote_services ( id SERIAL, name VARCHAR UNIQUE NOT NULL, url VARCHAR NOT NULL, interval INT DEFAULT 24, PRIMARY KEY(id) )");
             statement.addBatch("CREATE TABLE IF NOT EXISTS vote_ips ( id SERIAL, address VARCHAR NOT NULL, PRIMARY KEY(id) )");
-            statement.addBatch("CREATE TABLE IF NOT EXISTS votes ( id SERIAL, player_id INTEGER REFERENCES vote_players(id) ON DELETE CASCADE, service_id INTEGER REFERENCES vote_services(id) ON DELETE CASCADE, ip_id INTEGER REFERENCES vote_ips(id) ON DELETE CASCADE, rewarded BOOL DEFAULT TRUE, timestamp TIMESTAMP DEFAULT NOW(), PRIMARY KEY(id) )");
+            statement.addBatch("CREATE TABLE IF NOT EXISTS votes ( id SERIAL, player_id INT REFERENCES vote_players(id) ON DELETE CASCADE, service_id INT REFERENCES vote_services(id) ON DELETE CASCADE, ip_id INT REFERENCES vote_ips(id) ON DELETE CASCADE, rewarded BOOL DEFAULT TRUE, timestamp TIMESTAMP DEFAULT NOW(), PRIMARY KEY(id) )");
+            statement.addBatch("CREATE TABLE IF NOT EXISTS vote_commands ( id SERIAL, vote_id INT REFERENCES votes(id) ON DELETE CASCADE, player_id INT, runAt BIGINT NOT NULL, command VARCHAR NOT NULL, runAsConsole BOOL DEFAULT TRUE, runAsOp BOOL DEFAULT TRUE, infoMessage VARCHAR, waitingForPlayerLogin BOOL DEFAULT FALSE, PRIMARY KEY(id), CONSTRAINT player_command UNIQUE (player_id, command) )");
             statement.executeBatch();
 
             return true;
