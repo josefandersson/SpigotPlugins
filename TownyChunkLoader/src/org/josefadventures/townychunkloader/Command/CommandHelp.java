@@ -17,8 +17,8 @@ public class CommandHelp {
 
         sender.sendMessage("§2/cl set §a- Attempt to set current chunk as chunk loader.");
         sender.sendMessage("§2/cl delete §a- Remove chunk loader from current chunk.");
-        sender.sendMessage("§2/cl delete <x> <z> [world] §a- Remove chunk loader chunk at chunk x, z in current world or another world");
-        sender.sendMessage("§2/cl bump §a- Resets timers for all chunk loaders.");
+        sender.sendMessage("§2/cl delete <x> <z> [world] §a- Remove chunk loader chunk at chunk x, z in current world or another world.");
+        sender.sendMessage("§2/cl bump §a- Resets timers for all chunk loaders."); // TODO: only display if bumping is enabled
 
         if (sender.hasPermission(TownyChunkLoader.PERMISSION_COMMAND_HERE))
             sender.sendMessage("§2/cl here §a- Check if there's a chunk loader in the current chunk and gives info about the chunk loader.");

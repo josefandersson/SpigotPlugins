@@ -31,6 +31,9 @@ class RewardCommand {
 
 public class VoteListener extends JavaPlugin implements Listener {
 
+    // TODO: Permissions... right now everyone can set/delete services lmao
+    // TODO: Make links into tellraw links, ie just anchors in chat instead of full url
+
     private Connection connection;
 
     private String conUrl = "jdbc:postgresql://host:port/database";
@@ -570,7 +573,7 @@ public class VoteListener extends JavaPlugin implements Listener {
             Statement statement = this.connection.createStatement();
             statement.addBatch("CREATE SCHEMA IF NOT EXISTS " + schema + " AUTHORIZATION " + username);
             statement.addBatch("CREATE TABLE IF NOT EXISTS vote_players ( id SERIAL, uuid VARCHAR NOT NULL, PRIMARY KEY(id) )");
-            statement.addBatch("CREATE TABLE IF NOT EXISTS vote_services ( id SERIAL, name VARCHAR UNIQUE NOT NULL, url VARCHAR NOT NULL, interval INT DEFAULT 24, PRIMARY KEY(id) )");
+            statement.addBatch("CREATE TABLE IF NOT EXISTS vote_services ( id SERIAL, name VARCHAR UNIQUE NOT NULL, url VARCHAR NOT NULL, interval INT DEFAULT 20, PRIMARY KEY(id) )");
             statement.addBatch("CREATE TABLE IF NOT EXISTS vote_ips ( id SERIAL, address VARCHAR NOT NULL, PRIMARY KEY(id) )");
             statement.addBatch("CREATE TABLE IF NOT EXISTS votes ( id SERIAL, player_id INT REFERENCES vote_players(id) ON DELETE CASCADE, service_id INT REFERENCES vote_services(id) ON DELETE CASCADE, ip_id INT REFERENCES vote_ips(id) ON DELETE CASCADE, rewarded BOOL DEFAULT TRUE, timestamp TIMESTAMP DEFAULT NOW(), PRIMARY KEY(id) )");
             statement.addBatch("CREATE TABLE IF NOT EXISTS vote_commands ( id SERIAL, vote_id INT REFERENCES votes(id) ON DELETE CASCADE, player_id INT, runAt BIGINT NOT NULL, command VARCHAR NOT NULL, runAsConsole BOOL DEFAULT TRUE, runAsOp BOOL DEFAULT TRUE, infoMessage VARCHAR, waitingForPlayerLogin BOOL DEFAULT FALSE, PRIMARY KEY(id), CONSTRAINT player_command UNIQUE (player_id, command) )");

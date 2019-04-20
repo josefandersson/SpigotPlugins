@@ -15,7 +15,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.josefadventures.townychunkloader.command.*;
 
 import java.sql.*;
-import java.time.Instant;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -116,24 +115,6 @@ public class TownyChunkLoader extends JavaPlugin implements Listener {
         } catch (SQLException ex) {
             getLogger().log(Level.SEVERE, ex.getMessage(), ex);
         }
-
-        // TODO: this doesn't make sense? why update chunks that are loaded?
-        /*
-        try {
-            ResultSet rs = this.connection.createStatement().executeQuery("SELECT * FROM cl_chunks WHERE last_update < last_bump + ttl_millis");
-            while (rs.next()) {
-                World world = Bukkit.getWorld(UUID.fromString(rs.getString("world_uuid")));
-                if (world != null && world.isChunkLoaded(rs.getInt("x"), rs.getInt("z"))) {
-                    double interval = Math.min(rs.getDouble("last_bump") + rs.getDouble("ttl_millis") - rs.getDouble("last_update"),
-                            rs.getDouble("ttl_millis"));
-                    int ticks = (int) interval / 50;
-                    this.progressChunk(world.getChunkAt(rs.getInt("x"), rs.getInt("z")), ticks, rs.getDouble("growth_multiplier")); // TODO: player multiplier
-                    // TODO: update last_update
-                }
-            }
-        } catch (SQLException ex) {
-            getLogger().log(Level.SEVERE, ex.getMessage(), ex);
-        }*/
     }
 
     @Override
@@ -370,7 +351,7 @@ public class TownyChunkLoader extends JavaPlugin implements Listener {
             statement.addBatch("CREATE SCHEMA IF NOT EXISTS " + schema + " AUTHORIZATION " + username);
             statement.addBatch("CREATE TABLE IF NOT EXISTS cl_players ( id SERIAL UNIQUE, uuid VARCHAR UNIQUE NOT NULL, max_chunks INT DEFAULT -1, PRIMARY KEY(id, uuid) )");
             statement.addBatch("CREATE TABLE IF NOT EXISTS cl_chunks ( id SERIAL, world_uuid VARCHAR NOT NULL, player_id INT REFERENCES cl_players(id) ON DELETE CASCADE, " +
-                    "x INT NOT NULL, z INT NOT NULL, last_bump FLOAT8 DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000, last_update FLOAT8 DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000, " +
+                    "x INT NOT NULL, z INT NOT NULL, last_bump FLOAT8 DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000), last_update FLOAT8 DEFAULT (EXTRACT(EPOCH FROM NOW()) * 1000), " +
                     "growth_multiplier FLOAT4 DEFAULT 1.0, ttl_millis FLOAT8 DEFAULT 14400000, PRIMARY KEY(id, world_uuid, x, z) )");
             statement.executeBatch();
 

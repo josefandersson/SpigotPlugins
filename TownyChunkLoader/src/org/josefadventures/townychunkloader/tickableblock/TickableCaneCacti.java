@@ -8,19 +8,24 @@ import org.bukkit.block.data.Ageable;
 /**
  * Tickable block for sugar cane and cacti.
  *
- * Given height (max-of-type below this block) of 2 for sugar cane, 1 for cacti.
+ * Given height (max-of-type below this block) of 2 as default for canes and cacti.
  */
 public class TickableCaneCacti extends TickableBlock {
 
     private int height;
+    private Material material;
 
     public TickableCaneCacti(Block block, int height) {
         super(block);
         this.height = height;
+        this.material = this.block.getType();
     }
 
     @Override
     public void doRandomTicks(int numRandomTicks) {
+        if (this.block.getType() != this.material) // maybe a piston has been triggered and removed this block?
+            return;
+
         Ageable ageable = ((Ageable) this.block.getBlockData());
 
         int delta = numRandomTicks;

@@ -89,7 +89,7 @@ public class CommandSet {
             ps.setString(2, player.getWorld().getUID().toString());
             ps.setInt(3, player.getLocation().getChunk().getX());
             ps.setInt(4, player.getLocation().getChunk().getZ());
-            ps.setLong(5, hours * 3600000);
+            ps.setLong(5, hours * 3600000L);
             if (ps.executeUpdate() > 0) {
                 if (hours > 0) {
                     if (hours == 1)

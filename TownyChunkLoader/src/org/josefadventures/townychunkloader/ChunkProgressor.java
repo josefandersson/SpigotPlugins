@@ -97,12 +97,9 @@ public class ChunkProgressor {
                             this.blocks.add(new TickableSapling(this.chunk.getBlock(x, y, z)));
                             break;
 
+                        case CACTUS:
                         case SUGAR_CANE:
                             this.blocks.add(new TickableCaneCacti(this.chunk.getBlock(x, y, z), 2));
-                            break;
-
-                        case CACTUS:
-                            this.blocks.add(new TickableCaneCacti(this.chunk.getBlock(x, y, z), 1));
                             break;
 
                         // TODO: leaves(!), mushrooms, vines, chorus, sea pickle, coral?
