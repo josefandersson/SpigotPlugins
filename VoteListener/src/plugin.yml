@@ -1,5 +1,5 @@
 name: VoteListener
-version: 1.0
+version: 2.0
 author: DrDoof
 main: org.josefadventures.votelistener.VoteListener
 api-version: 1.13

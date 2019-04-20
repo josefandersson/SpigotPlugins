@@ -213,7 +213,7 @@ public class CommandTriggers extends JavaPlugin implements Listener {
             ItemStack st = new ItemStack(Material.STICK);
             ItemMeta meta = st.getItemMeta();
             meta.setDisplayName("Trigger Creation Tool");
-            meta.setLore(Arrays.asList("Command:", command));
+            meta.setLore(Arrays.asList("Commandss:", command));
             st.setItemMeta(meta);
             player.getInventory().setItemInMainHand(st);
 

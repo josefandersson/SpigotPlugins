@@ -1,93 +1,147 @@
 package org.josefadventures.townychunkloader;
 
-import com.palmergames.bukkit.towny.Towny;
 import com.palmergames.bukkit.towny.event.TownUnclaimEvent;
-import com.palmergames.bukkit.towny.object.*;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockPhysicsEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
-import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.josefadventures.townychunkloader.command.*;
 
+import java.sql.*;
+import java.time.Instant;
 import java.util.*;
+import java.util.logging.Level;
 
 public class TownyChunkLoader extends JavaPlugin implements Listener {
 
-    private final String PERMISSION_COMMAND = "townychunkloader.command";
-    private final String PERMISSION_COMMAND_LIST_ALL = "townychunkloader.command.list.all";
-    private final String PERMISSION_COMMAND_LIST_PLAYER = "townychunkloader.command.list.player";
-    private final String PERMISSION_COMMAND_HERE = "townychunkloader.command.here";
-    private final String PERMISSION_COMMAND_FORCEDELETE = "townychunkloader.command.forcedelete";
-    private final String PERMISSION_CHUNKS_ = "townychunkloader.chunks.";
-    private final String PERMISSION_CHUNKS_EXEMPT = "townychunkloader.chunks.exempt";
-    private final String PERMISSION_TIME_ = "townychunkloader.time.";
-    private final String PERMISSION_TIME_EXEMPT = "townychunkloader.time.exempt"; // TODO:
+    public static final String PERMISSION_COMMAND = "townychunkloader.command";
+    public static final String PERMISSION_COMMAND_LIST_ALL = "townychunkloader.command.list.all";
+    public static final String PERMISSION_COMMAND_LIST_PLAYER = "townychunkloader.command.list.player";
+    public static final String PERMISSION_COMMAND_HERE = "townychunkloader.command.here";
+    public static final String PERMISSION_COMMAND_FORCEDELETE = "townychunkloader.command.forcedelete";
+    public static final String PERMISSION_COMMAND_FORCEPROGRESS = "townychunkloader.command.forceprogress";
+    public static final String PERMISSION_CHUNKS_ = "townychunkloader.chunks.";
+    public static final String PERMISSION_CHUNKS_EXEMPT = "townychunkloader.chunks.exempt";
+    public static final String PERMISSION_TIME_ = "townychunkloader.time.";
+    public static final String PERMISSION_TIME_EXEMPT = "townychunkloader.time.exempt"; // TODO:
 
     public static TownyChunkLoader instance;
 
-    private HashMap<String, ChunkLoaderv1> chunkLoaders;
-    private int maxTimeHours = 168; // 1 week
+    private static HashMap<String, String> worldNames = new HashMap<>();
+    private static HashMap<String, String> playerNames = new HashMap<>();
+    private static HashMap<String, Double> worldMultipliers = new HashMap<>();
+
+    public Connection connection;
+
+    private String conUrl = "jdbc:postgresql://host:port/database";
+    private String conSchema = "townychunkloader";
+    private String conUser = "";
+    private String conPass = "";
+
+    public int maxTimeHours = 168; // 1 week
+    public double growthMultiplier = 1;
+    public int maxUpdatesPerTick = 10;
 
     @Override
     public void onEnable() {
-        Towny towny = (Towny) this.getServer().getPluginManager().getPlugin("Towny");
-
-        if (towny == null) {
-            this.getPluginLoader().disablePlugin(this);
-            this.getLogger().warning("TownyChunkLoader needs Towny to work.");
-            return;
-        } else {
-            this.getServer().getPluginManager().registerEvents(this, this);
-            this.getLogger().info("TownyChunkLoader running as should.");
-        }
-
         instance = this;
 
-        this.chunkLoaders = new HashMap<>();
+        getConfig().addDefault("maxTimeHours", this.maxTimeHours);
+        getConfig().addDefault("growthMultiplier", this.growthMultiplier);
+        getConfig().addDefault("maxUpdatesPerTick", this.maxUpdatesPerTick);
+        getConfig().addDefault("worlds", new String[] {}); // TODO: world specific multipliers?
 
-        this.getConfig().addDefault("chunkLoaders", new String[] {});
-        this.getConfig().addDefault("maxTimeHours", this.maxTimeHours);
-        this.getConfig().options().copyDefaults(true);
-        this.saveConfig();
+        getConfig().addDefault("postgresql_url", this.conUrl);
+        getConfig().addDefault("postgresql_schema", this.conSchema);
+        getConfig().addDefault("postgresql_username", this.conUser);
+        getConfig().addDefault("postgresql_password", this.conPass);
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
         this.maxTimeHours = getConfig().getInt("maxTimeHours");
+        this.growthMultiplier = getConfig().getDouble("growthMultiplier");
+        this.maxUpdatesPerTick = getConfig().getInt("maxUpdatesPerTick");
 
-        // TODO: Load chunks on startup. cl.bump() should do that.
-        for (String str : this.getConfig().getStringList("chunkLoaders")) {
-            ChunkLoaderv1 cl = ChunkLoaderv1.fromString(str);
-            if (cl != null) {
-                this.chunkLoaders.put(cl.id(), cl);
-            }
+        this.conUrl = getConfig().getString("postgresql_url");
+        this.conSchema = getConfig().getString("postgresql_schema");
+        this.conUser = getConfig().getString("postgresql_username");
+        this.conPass = getConfig().getString("postgresql_password");
+
+        if (this.connectToDatabase()) {
+            getLogger().info("Connected to PostgreSQL.");
+        } else {
+            getLogger().warning("Could not connect to PostgreSQL. Wrong credentials in config.yml?");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
         }
-        this.getLogger().info("Loaded " + this.chunkLoaders.size() + " chunk loaders.");
 
-        Chunk c = getServer().getWorld("Towny").getChunkAt(18, 68);
-        c.load(); c.setForceLoaded(true);
-        this.getServer().getScheduler().runTaskLater(this, () -> {
-            this.chunkLoaders.get(ChunkLoaderv1.chunkId(c)).updateCropsList();
-        }, 20);
-        this.getServer().getScheduler().scheduleSyncRepeatingTask(this, () -> {
-            randomTickChunk(c);
-        }, 20*5, 20);
+        if (this.createDefaultTables()) {
+            getLogger().info("PostgreSQL database is setup.");
+        } else {
+            getLogger().warning("Could not setup PostgreSQL database. PostgreSQL user lacking permission?");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        getServer().getPluginManager().registerEvents(this, this);
+
+        ConfigurationSection cs = getConfig().getConfigurationSection("worlds");
+        if (cs != null) {
+            for (String worldName : cs.getKeys(false)) {
+                World world = Bukkit.getWorld(worldName);
+                if (world != null) {
+                    // TODO: do something
+                    worldMultipliers.put(world.getUID().toString(), cs.getConfigurationSection(worldName).getDouble("growthMultiplier"));
+                } else {
+                    getLogger().warning("World with name \"" + worldName + "\" not found.");
+                }
+            }
+        } else {
+            getLogger().warning("No worlds defined in config.yml.");
+        }
+
+        try {
+            PreparedStatement ps = this.connection.prepareStatement("INSERT INTO cl_players (uuid) VALUES (?) ON CONFLICT DO NOTHING");
+            for (Player player : getServer().getOnlinePlayers()) {
+                ps.setString(1, player.getUniqueId().toString());
+                ps.executeUpdate();
+            }
+        } catch (SQLException ex) {
+            getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+        }
+
+        // TODO: this doesn't make sense? why update chunks that are loaded?
+        /*
+        try {
+            ResultSet rs = this.connection.createStatement().executeQuery("SELECT * FROM cl_chunks WHERE last_update < last_bump + ttl_millis");
+            while (rs.next()) {
+                World world = Bukkit.getWorld(UUID.fromString(rs.getString("world_uuid")));
+                if (world != null && world.isChunkLoaded(rs.getInt("x"), rs.getInt("z"))) {
+                    double interval = Math.min(rs.getDouble("last_bump") + rs.getDouble("ttl_millis") - rs.getDouble("last_update"),
+                            rs.getDouble("ttl_millis"));
+                    int ticks = (int) interval / 50;
+                    this.progressChunk(world.getChunkAt(rs.getInt("x"), rs.getInt("z")), ticks, rs.getDouble("growth_multiplier")); // TODO: player multiplier
+                    // TODO: update last_update
+                }
+            }
+        } catch (SQLException ex) {
+            getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+        }*/
     }
 
     @Override
     public void onDisable() {
-        ArrayList<String> strs = new ArrayList<>();
-        for (ChunkLoaderv1 cl : this.chunkLoaders.values()) {
-            strs.add(cl.toString());
-        }
-        this.getConfig().set("chunkLoaders", strs);
-        this.saveConfig();
+        try {
+            this.connection.close();
+            getLogger().info("Closed PostgreSQL connection.");
+        } catch (SQLException | NullPointerException ex) { }
     }
 
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -97,41 +151,24 @@ public class TownyChunkLoader extends JavaPlugin implements Listener {
         }
 
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            sender.sendMessage(ChatColor.GREEN + "TownyChunkLoader commands:");
-            sender.sendMessage(ChatColor.DARK_GREEN + "/cl help " + ChatColor.GREEN + "- Display this message.");
-            sender.sendMessage(ChatColor.DARK_GREEN + "/cl list " + ChatColor.GREEN + "- List your own chunk loaders.");
-
-            if (sender.hasPermission(PERMISSION_COMMAND_LIST_ALL))
-                sender.sendMessage(ChatColor.DARK_GREEN + "/cl list all " + ChatColor.GREEN + "- List all chunk loaders on the server.");
-            if (sender.hasPermission(PERMISSION_COMMAND_LIST_PLAYER))
-                sender.sendMessage(ChatColor.DARK_GREEN + "/cl list player <player> " + ChatColor.GREEN + "- List all chunk loaders owned by specified player.");
-
-            sender.sendMessage(ChatColor.DARK_GREEN + "/cl set " + ChatColor.GREEN + "- Attempt to set current chunk as chunk loader.");
-            sender.sendMessage(ChatColor.DARK_GREEN + "/cl delete [chunk name] " + ChatColor.GREEN + "- Remove chunk loader from current chunk, or from chunk with name.");
-            sender.sendMessage(ChatColor.DARK_GREEN + "/cl bump " + ChatColor.GREEN + "- Resets timers for all chunk loaders.");
-
-            if (sender.hasPermission(PERMISSION_COMMAND_HERE))
-                sender.sendMessage(ChatColor.DARK_GREEN + "/cl here " + ChatColor.GREEN + "- Check if there's a chunk loader in the current chunk and gives info about the chunk loader.");
-            else
-                sender.sendMessage(ChatColor.DARK_GREEN + "/cl here " + ChatColor.GREEN + "- Check if there's a chunk loader in the current chunk.");
-
-            if (sender.hasPermission(PERMISSION_COMMAND_FORCEDELETE)) {
-                sender.sendMessage(ChatColor.DARK_GREEN + "/cl forcedelete " + ChatColor.GREEN + "- Remove all chunk loaders on the server.");
-                sender.sendMessage(ChatColor.DARK_GREEN + "/cl forcedelete world <world> " + ChatColor.GREEN + "- Remove all chunk loaders in the specified world.");
-                sender.sendMessage(ChatColor.DARK_GREEN + "/cl forcedelete player <player> " + ChatColor.GREEN + "- Remove all chunk loaders owned by specified player.");
-            }
-
-            return true;
+            return CommandHelp.onCommand(sender);
         }
 
         String subCmd = args[0].toLowerCase();
 
-        if (subCmd.equals("list") || subCmd.equals("l")) {
-            onCommandList(sender, cmd, args);
-            return true;
-        } else if (subCmd.equals("forcedelete") || subCmd.equals("forceremove")) {
-            onCommandForcedelete(sender, cmd, args);
-            return true;
+        switch (subCmd) {
+            case "l":
+            case "list":
+                return CommandList.onCommand(sender, cmd, args);
+
+            case "fd":
+            case "fr":
+            case "forced":
+            case "forcer":
+            case "forcedel":
+            case "forceremove":
+            case "forcedelete":
+                return CommandForceDelete.onCommand(sender, cmd, args);
         }
 
         if (!(sender instanceof Player)) {
@@ -141,413 +178,207 @@ public class TownyChunkLoader extends JavaPlugin implements Listener {
 
         Player player = (Player) sender;
 
-        if (subCmd.equals("set") || subCmd.equals("s"))
-            onCommandSet(player);
-        else if (subCmd.equals("delete") || subCmd.equals("del") || subCmd.equals("remove"))
-            onCommandDelete(player, args);
-        else if (subCmd.equals("bump") || subCmd.equals("b"))
-            onCommandBump(player);
-        else if (subCmd.equals("here") || subCmd.equals("h"))
-            onCommandHere(player);
-        else
-            sender.sendMessage(ChatColor.RED + "Couldn't recognize your command. Use /cl help to list all commands.");
+        switch (subCmd) {
+            case "s":
+            case "set":
+                return CommandSet.onCommand(player);
 
+            case "d":
+            case "del":
+            case "delete":
+            case "remove":
+                return CommandDelete.onCommand(player, args);
+
+            case "b":
+            case "bump":
+                return CommandBump.onCommand(player);
+
+            case "h":
+            case "here":
+                return CommandHere.onCommand(player);
+
+            case "fp":
+            case "forcep":
+            case "forceprogress":
+                return CommandForceProgress.onCommand(player, cmd, args);
+        }
+
+        sender.sendMessage("§cCouldn't recognize your command. Use §4/cl help §cto list all commands.");
         return true;
     }
 
-    private void onCommandList(CommandSender sender, Command cmd, String[] args) {
-        switch (args.length) {
-            case 1: // list own
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage("Only '/cl list all' and '/cl list player <player>' can be used in the console.");
-                    return;
-                }
-
-                sender.sendMessage(ChatColor.GREEN + "Listing your chunk loaders:");
-                UUID uuid = ((Player) sender).getUniqueId();
-                for (ChunkLoaderv1 cl : this.chunkLoaders.values()) {
-                    if (cl.ownerUUID.equals(uuid)) {
-                        Chunk c = cl.getChunk();
-                        c.setForceLoaded(false);
-                        sender.sendMessage(ChatColor.DARK_GREEN + "[" + cl.id() + "] " + ChatColor.GREEN + cl.toInfoString()
-                                + "isLoaded:" + c.isLoaded()
-                                + " isForceLoaded:" + c.isForceLoaded()
-                                + " isChunkInUse:" + c.getWorld().isChunkInUse(cl.x, cl.z)
-                                + " isChunkForceLoaded:" + c.getWorld().isChunkForceLoaded(cl.x, cl.z)
-                                + " loadState:" + cl.loadState.name());
-
-                        cl.growCropsSinceUnload();
-                    }
-                }
-                return;
-            case 2: // list all
-                if (args[1].equalsIgnoreCase("all")) {
-                    if (sender.hasPermission(PERMISSION_COMMAND_LIST_ALL)) {
-                        sender.sendMessage(ChatColor.GREEN + "Listing all chunk loaders on the server:");
-                        for (ChunkLoaderv1 cl : this.chunkLoaders.values()) {
-                            sender.sendMessage(ChatColor.DARK_GREEN + "[" + cl.id() + "] " + ChatColor.GREEN + cl.toInfoString());
-                        }
-                    } else {
-                        sender.sendMessage(ChatColor.DARK_RED + cmd.getPermissionMessage());
-                    }
-
-                    return;
-                }
-                break;
-            case 3: // list players
-                if (args[1].equalsIgnoreCase("player")) {
-                    if (sender.hasPermission(PERMISSION_COMMAND_LIST_PLAYER)) {
-                        Player targetPlayer = Bukkit.getPlayer(args[2]);
-                        if (targetPlayer == null) {
-                            sender.sendMessage(ChatColor.RED + "Player with name " + args[2] + " could not be found.");
-                        } else {
-                            sender.sendMessage(ChatColor.GREEN + "Listing chunk loaders for player " + targetPlayer.getName() + ":");
-                            UUID targetUUID = targetPlayer.getUniqueId();
-                            for (ChunkLoaderv1 cl : this.chunkLoaders.values()) {
-                                if (cl.ownerUUID.equals(targetUUID)) {
-                                    sender.sendMessage(ChatColor.DARK_GREEN + "[" + cl.id() + "] " + ChatColor.GREEN + cl.toInfoString());
-                                }
-                            }
-                        }
-                    } else {
-                        sender.sendMessage(ChatColor.DARK_RED + cmd.getPermissionMessage());
-                    }
-
-                    return;
-                }
-                break;
+    /**
+     * Progresses a chunk (grows, decays) X game ticks. Adds multipliers from server and world.
+     * @param chunk chunk to progress.
+     * @param numTicks number of games ticks to progress. (20 ticks = 1 second)
+     * @param multiplier increase or decrease chance of random tick.
+     */
+    public void progressChunk(Chunk chunk, int numTicks, double multiplier) {
+        double worldMultiplier = 1;
+        if (worldMultipliers.containsKey(chunk.getWorld().getUID().toString())) {
+            worldMultiplier = worldMultipliers.get(chunk.getWorld().getUID().toString());
         }
 
-        sender.sendMessage(ChatColor.RED + "Wrong usage of the command. Use /cl help to list all commands.");
-    }
+        System.out.println("Progressing chunk with multiplier: " + multiplier * worldMultiplier * this.growthMultiplier);
 
-    private void onCommandForcedelete(CommandSender sender, Command cmd, String[] args) {
-        if (!sender.hasPermission(PERMISSION_COMMAND_FORCEDELETE)) {
-            sender.sendMessage(ChatColor.DARK_RED + cmd.getPermissionMessage());
-            return;
-        }
-
-        if (args.length == 1) {
-            int num = this.chunkLoaders.size();
-            this.chunkLoaders.clear();
-            sender.sendMessage(ChatColor.GREEN + "Removed all " + num + " chunk loaders on the server.");
-            return;
-        } else if (args.length == 3) {
-            if (args[1].equalsIgnoreCase("world")) {
-                World world = Bukkit.getWorld(args[2]);
-                if (world == null) {
-                    sender.sendMessage(ChatColor.RED + "World with name " + args[2] + " could not be found.");
-                } else {
-                    int num = 0;
-                    for (Map.Entry<String, ChunkLoaderv1> entry : this.chunkLoaders.entrySet()) {
-                        if (entry.getValue().world.equals(world.getName())) {
-                            this.chunkLoaders.remove(entry.getKey());
-                            num++;
-                        }
-                    }
-                    sender.sendMessage(ChatColor.GREEN + "Removed " + num + " chunk loaders from world " + world.getName() + ".");
-                }
-            } else if (args[1].equalsIgnoreCase("player")) {
-                Player targetPlayer = Bukkit.getPlayer(args[2]);
-                if (targetPlayer == null) {
-                    sender.sendMessage(ChatColor.RED + "Player with name " + args[2] + " could not be found.");
-                } else {
-                    UUID targetUUID = targetPlayer.getUniqueId();
-                    int num = 0;
-                    for (Map.Entry<String, ChunkLoaderv1> entry : this.chunkLoaders.entrySet()) {
-                        if (entry.getValue().ownerUUID.equals(targetUUID)) {
-                            this.chunkLoaders.remove(entry.getKey());
-                            num++;
-                        }
-                    }
-                    sender.sendMessage(ChatColor.GREEN + "Removed " + num + " chunk loaders by player " + targetPlayer.getName() + ".");
-                }
-            }
-        }
-
-        sender.sendMessage(ChatColor.RED + "Wrong usage of the command. Use /cl help to list all commands.");
-    }
-
-    private void onCommandSet(Player player) {
-        if (!player.hasPermission(PERMISSION_CHUNKS_EXEMPT)) {
-            int playerTotal = 0;
-            for (ChunkLoaderv1 cl : this.chunkLoaders.values()) {
-                if (cl.ownerUUID.equals(player.getUniqueId())) {
-                    playerTotal++;
-                }
-            }
-
-            for (int i = playerTotal; i >= 0; i--) {
-                if (player.hasPermission(PERMISSION_CHUNKS_ + i)) {
-                    player.sendMessage(ChatColor.RED + "You cannot set any more chunk loaders.");
-                    return;
-                }
-            }
-        }
-
-        String alreadyThereId = ChunkLoaderv1.chunkId(player.getLocation().getChunk());
-        if (this.chunkLoaders.containsKey(alreadyThereId)) {
-            ChunkLoaderv1 alreadyThere = this.chunkLoaders.get(alreadyThereId);
-            if (alreadyThere.ownerUUID.equals(player.getUniqueId())) {
-                player.sendMessage(ChatColor.RED + "You have already set this chunk as a chunk loader.");
-            } else {
-                if (player.hasPermission(PERMISSION_COMMAND_HERE)) {
-                    OfflinePlayer ownerPlayer = Bukkit.getOfflinePlayer(alreadyThere.ownerUUID);
-                    if (ownerPlayer.getName() == null) {
-                        player.sendMessage(ChatColor.RED + "This chunk already has a chunk loader.");
-                    } else {
-                        player.sendMessage(ChatColor.RED + ownerPlayer.getName() + " has already set this chunk as a chunk loader.");
-                    }
-                } else {
-                    player.sendMessage(ChatColor.RED + "This chunk already has a chunk loader.");
-                }
-            }
-
-            return;
-        }
-
-        Resident resident = null;
-        Town town = null;
-        try {
-            resident = TownyUniverse.getDataSource().getResident(player.getName());
-            town = TownyUniverse.getTownBlock(player.getLocation()).getTown();
-
-            if (!resident.getTown().equals(town)) {
-                player.sendMessage(ChatColor.RED + "You can only set a chunk loader in your own town."); // in someone else's town
-                return;
-            }
-        } catch (Exception e) {
-            player.sendMessage(ChatColor.RED + "You can only set a chunk loader in your own town."); // in the wild
-            return;
-        }
-
-        int hours = 876582;
-        if (!player.hasPermission(PERMISSION_TIME_EXEMPT)) {
-            hours = this.maxTimeHours;
-            for (; hours > 0; hours--) {
-                if (player.hasPermission(PERMISSION_TIME_ + hours)) {
-                    break;
-                }
-            }
-            if (hours == 0) hours = this.maxTimeHours;
-        }
-
-        ChunkLoaderv1 chunkLoader = new ChunkLoaderv1(player.getLocation().getChunk(), player.getUniqueId(), hours);
-        this.chunkLoaders.put(chunkLoader.id(), chunkLoader);
-        // player.getLocation().getChunk().setForceLoaded(true);
-
-        player.sendMessage(ChatColor.GREEN + "You set this chunk as a chunk loader. It will need to be bumped every " + hours + " hour(s).");
-    }
-
-    private void onCommandDelete(Player player, String[] args) {
-        if (args.length == 1) {
-            String hereId = ChunkLoaderv1.chunkId(player.getLocation().getChunk());
-            if (this.chunkLoaders.containsKey(hereId)) {
-                ChunkLoaderv1 cl = this.chunkLoaders.get(hereId);
-                if (cl.ownerUUID.equals(player.getUniqueId())) {
-                    this.chunkLoaders.remove(hereId);
-                    player.sendMessage(ChatColor.GREEN + "You removed the chunk loader from this chunk.");
-                } else {
-                    if (player.hasPermission(PERMISSION_COMMAND_HERE)) {
-                        OfflinePlayer ownerPlayer = Bukkit.getOfflinePlayer(cl.ownerUUID);
-                        if (ownerPlayer.getName() == null) {
-                            player.sendMessage(ChatColor.RED + "You cannot delete the chunk loader on this chunk because it was created by another player.");
-                        } else {
-                            player.sendMessage(ChatColor.RED + "You cannot delete the chunk loader on this chunk because it was created by " + ownerPlayer.getName() + ".");
-                        }
-                    } else {
-                        player.sendMessage(ChatColor.RED + "You cannot delete the chunk loader on this chunk because it was created by another player.");
-                    }
-                }
-            } else {
-                player.sendMessage(ChatColor.RED + "You have not set this chunk as a chunk loader.");
-            }
-            return;
-        } else if (args.length == 2) {
-            if (this.chunkLoaders.containsKey(args[1])) {
-                ChunkLoaderv1 cl = this.chunkLoaders.get(args[1]);
-                if (cl.ownerUUID.equals(player.getUniqueId())) {
-                    this.chunkLoaders.remove(args[1]);
-                    player.sendMessage(ChatColor.GREEN + "You removed the chunk loader " + args[1] + ".");
-                } else {
-                    if (player.hasPermission(PERMISSION_COMMAND_HERE)) {
-                        OfflinePlayer ownerPlayer = Bukkit.getOfflinePlayer(cl.ownerUUID);
-                        if (ownerPlayer.getName() == null) {
-                            player.sendMessage(ChatColor.RED + "You cannot delete the chunk loader on that chunk because it was created by another player.");
-                        } else {
-                            player.sendMessage(ChatColor.RED + "You cannot delete the chunk loader on that chunk because it was created by " + ownerPlayer.getName() + ".");
-                        }
-                    } else {
-                        player.sendMessage(ChatColor.RED + "You cannot delete the chunk loader on that chunk because it was created by another player.");
-                    }
-                }
-            } else {
-                player.sendMessage(ChatColor.RED + "Chunk loader with name " + args[1] + " could not be found.");
-            }
-            return;
-        }
-
-        player.sendMessage(ChatColor.RED + "Wrong usage of the command. Use /cl help to list all commands.");
-    }
-
-    private void onCommandBump(Player player) {
-        int num = 0;
-        for (ChunkLoaderv1 cl : this.chunkLoaders.values()) {
-            if (cl.ownerUUID.equals(player.getUniqueId())) {
-                cl.bump();
-                num++;
-            }
-        }
-
-        player.sendMessage(ChatColor.GREEN + "You bumped " + num + " chunk loaders.");
-    }
-
-    private void onCommandHere(Player player) {
-        String hereId = ChunkLoaderv1.chunkId(player.getLocation().getChunk());
-        if (this.chunkLoaders.containsKey(hereId)) {
-            ChunkLoaderv1 cl = this.chunkLoaders.get(hereId);
-            if (cl.ownerUUID.equals(player.getUniqueId())) {
-                player.sendMessage(ChatColor.GREEN + "You have a chunk loader in this chunk. " + cl.toInfoString());
-            } else {
-                if (player.hasPermission(PERMISSION_COMMAND_HERE)) {
-                    OfflinePlayer ownerPlayer = Bukkit.getOfflinePlayer(cl.ownerUUID);
-                    if (ownerPlayer.getName() == null) {
-                        player.sendMessage(ChatColor.GREEN + "Someone has a chunk loader in this chunk. " + cl.toInfoString());
-                    } else {
-                        player.sendMessage(ChatColor.GREEN + ownerPlayer.getName() + " has a chunk loader in this chunk. " + cl.toInfoString());
-                        player.sendMessage(ChatColor.GREEN
-                                + "isLoaded:" + player.getLocation().getChunk().isLoaded()
-                                + " isForceLoaded:" + player.getLocation().getChunk().isForceLoaded()
-                                + " isChunkInUse:" + player.getWorld().isChunkInUse(cl.x, cl.z)
-                                + " isChunkForceLoaded:" + player.getWorld().isChunkForceLoaded(cl.x, cl.z));
-                    }
-                } else {
-                    player.sendMessage(ChatColor.GREEN + "This chunk has a chunk loader.");
-                }
-            }
-        } else {
-            player.sendMessage(ChatColor.GREEN + "This chunk does not have a chunk loader.");
-        }
-    }
-
-    private int cc = 0;
-
-    private void randomTickChunk(Chunk chunk) {
-        if (chunk.isLoaded()) {
-            /*Random r = new Random();
-            int x = r.nextInt(16);
-            int y = r.nextInt(255) + 1;
-            int z = r.nextInt(16);
-            chunk.getBlock(x, y, z).getState().update(false, true);*/
-            // chunk.getBlock(12, 58, 1).getState().update(false, true);
-
-            /*Block block = chunk.getBlock(12, 58, 1);
-            if (block.getState().getData() instanceof Crops) {
-                Crops crop = (Crops) block.getState().getData();
-                if (crop.getState() == CropState.RIPE) {
-                    this.getLogger().info("Crop is done.");
-                } else {
-                    CropState next = CropState.values()[crop.getState().ordinal() + 1];
-                    this.getLogger().info("Doing update on crop to state " + next.name());
-
-                    block.setType(Material.LEGACY_CROPS);
-                    crop = new Crops(next);
-                    BlockState bs = block.getState();
-                    bs.setData(crop);
-                    bs.update();
-
-                }
-            } else {
-                getLogger().info("Block isn't crop: " + block.getLocation().getBlockX() + " : " + block.getLocation().getBlockY() + " : " + block.getLocation().getBlockZ());
-            }*/
-
-            ChunkLoaderv1.grow(chunk.getBlock(12, 58, 1), 1);
-
-            getLogger().info("Updated " + (cc+++1) + " times.");
-        }
-    }
-
+        new ChunkProgressor(chunk, numTicks, multiplier * worldMultiplier * this.growthMultiplier);
+    } // TODO: add a queue for chunkprogressors, so that only one runs at a time
 
     @EventHandler
     public void onPlayerLoginEvent(PlayerLoginEvent ev) {
-        int num = 0;
-        for (ChunkLoaderv1 cl : this.chunkLoaders.values()) {
-            if (cl.ownerUUID.equals(ev.getPlayer().getUniqueId())) {
-                if (cl.nextTimeout < System.currentTimeMillis()) {
-                    num++;
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                PreparedStatement ps = this.connection.prepareStatement("INSERT INTO cl_players (uuid) VALUES (?) ON CONFLICT DO NOTHING");
+                ps.setString(1, ev.getPlayer().getUniqueId().toString());
+                ps.executeUpdate();
+
+                ps = this.connection.prepareStatement("SELECT count(*) AS num FROM cl_chunks WHERE last_bump + ttl_millis < ? AND player_id = (SELECT id FROM cl_players WHERE uuid = ?)");
+                ps.setLong(1, System.currentTimeMillis());
+                ps.setString(2, ev.getPlayer().getUniqueId().toString());
+                ResultSet rs = ps.executeQuery();
+                rs.next();
+
+                int num = rs.getInt("num");
+                if (num > 0) {
+                    if (num == 1) {
+                        ev.getPlayer().sendMessage("§bYou have §91 §bchunk loader that need bumping! Use §b/cl bump §9 to bump it.");
+                    } else {
+                        ev.getPlayer().sendMessage("§bYou have §9" + num + " §bchunk loaders that need bumping! Use §b/cl bump §9 to bump them.");
+                    }
                 }
+            } catch (SQLException ex) {
+                getLogger().log(Level.SEVERE, ex.getMessage(), ex);
             }
-        }
-
-        if (num > 0) {
-            ev.getPlayer().sendMessage(ChatColor.GOLD + "You have " + num + " chunk loader(s) that need bumping! Use " + ChatColor.RED + "/cl bump " + ChatColor.GOLD + "to bump.");
-        }
-    }
-
-    @EventHandler
-    public void iner(PlayerInteractEvent ev) {
-        if (ev.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            getLogger().info(ev.getClickedBlock().getType().getId() + "   " + ev.getClickedBlock().getState().getRawData() + "    " + ev.getClickedBlock().getBlockData().getAsString());
-            getLogger().info(ev.getClickedBlock().getType().name() + "  " + (ev.getClickedBlock().getType() == Material.SUGAR_CANE));
-        }
-    }
-
-    @EventHandler
-    public void onChunkUnload(ChunkUnloadEvent ev) {
-        String id = ChunkLoaderv1.chunkId(ev.getChunk());
-        if (this.chunkLoaders.containsKey(id)) {
-            this.getLogger().info("Unloading a chunkloader");
-            ChunkLoaderv1 cl = this.chunkLoaders.get(id);
-            if (cl.isActive()) {
-                cl.unloadTime = System.currentTimeMillis();
-                cl.updateCropsList();
-                // ev.setCancelled(true);
-                // this.getLogger().info("Cancelled chunk " + id + " from unloading.");
-                // this.getLogger().info("isForceLoaded:" + ev.getChunk().isForceLoaded() + " isLoaded:" + ev.getChunk().isLoaded() + " isChunkInUse:" + ev.getWorld().isChunkInUse(cl.x, cl.z));
-            }
-        }
+        });
     }
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent ev) {
-        String chunkId = ChunkLoaderv1.chunkId(ev.getChunk());
-        if (this.chunkLoaders.containsKey(chunkId)) {
-            this.getLogger().info("Load...");
-            ChunkLoaderv1 chunkLoader = this.chunkLoaders.get(chunkId);
-            chunkLoader.growCropsSinceUnload();
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                PreparedStatement ps = this.connection
+                        .prepareStatement("SELECT * FROM cl_chunks WHERE world_uuid = ? AND x = ? AND z = ? AND last_update < last_bump + ttl_millis",
+                                ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+                ps.setString(1, ev.getChunk().getWorld().getUID().toString());
+                ps.setInt(2, ev.getChunk().getX());
+                ps.setInt(3, ev.getChunk().getZ());
+                ResultSet rs = ps.executeQuery();
+
+                if (rs.next()) {
+                    double interval = Math.min(rs.getDouble("last_bump") + rs.getDouble("ttl_millis") - rs.getDouble("last_update"),
+                            rs.getDouble("ttl_millis"));
+                    int ticks = (int) interval / 50;
+                    this.progressChunk(ev.getChunk(), ticks, rs.getDouble("growth_multiplier")); // TODO: player multiplier
+
+                    System.out.println("progressing a loaded chunks by ticks " + ticks);
+
+                    rs.updateLong("last_update", System.currentTimeMillis());
+                    rs.updateRow();
+                }
+
+                rs.close();
+            } catch (SQLException ex) {
+                getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+            }
+        });
+    }
+
+    @EventHandler
+    public void onChunkUnload(ChunkUnloadEvent ev) {
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                PreparedStatement ps = this.connection.prepareStatement("UPDATE cl_chunks SET last_update = ? WHERE world_uuid = ? AND x = ? AND z = ?");
+                ps.setLong(1, System.currentTimeMillis());
+                ps.setString(2, ev.getWorld().getUID().toString());
+                ps.setInt(3, ev.getChunk().getX());
+                ps.setInt(4, ev.getChunk().getZ());
+                ps.executeUpdate();
+            } catch (SQLException ex) {
+                getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+            }
+        });
     }
 
     @EventHandler
     public void onTownUnclaim(TownUnclaimEvent ev) {
-        String chunkId = ChunkLoaderv1.chunkIdFromVaribles(
-                ev.getWorldCoord().getBukkitWorld(),
-                ev.getWorldCoord().getX(),
-                ev.getWorldCoord().getZ());
-        if (this.chunkLoaders.containsKey(chunkId)) {
-            this.chunkLoaders.remove(chunkId);
-            this.getLogger().info("Removed chunk loader with id " + chunkId + " because chunk got unclaimed.");
+
+    } // TODO: this is important
+
+
+
+
+
+    public static String worldName(String uuid) {
+        if (!worldNames.containsKey(uuid)) {
+            World world = Bukkit.getWorld(UUID.fromString(uuid));
+            if (world != null) {
+                worldNames.put(uuid, "§2" + world.getName());
+            } else {
+                worldNames.put(uuid, "§cUNKNOWN");
+            }
+        }
+        return worldNames.get(uuid);
+    }
+
+    public static String playerName(String uuid) {
+        if (!playerNames.containsKey(uuid)) {
+            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(uuid));
+            playerNames.put(uuid, offlinePlayer.getName());
+        }
+        return playerNames.get(uuid);
+    }
+
+    public int countChunkLoaders(UUID ownerUniqueId) {
+        try {
+            PreparedStatement ps = this.connection.prepareStatement("SELECT count(*) AS num FROM cl_chunks WHERE player_id = (SELECT id FROM cl_players WHERE uuid = ?)");
+            ps.setString(1, ownerUniqueId.toString());
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            return rs.getInt("num");
+        } catch (SQLException ex) {
+            getLogger().log(Level.SEVERE, ex.getMessage(), ex);
+            return -1;
         }
     }
 
-    // @EventHandler
-    public void onBlockPhysics(BlockPhysicsEvent ev) {
-        String chunkId = ChunkLoaderv1.chunkId(ev.getBlock().getChunk());
-        if (this.chunkLoaders.containsKey(chunkId)) {
-            this.getLogger().info("BlockPhysicsEvent in chunk loader chunk.");
-        } else {
-            this.getLogger().info("BlockPhysicsEvent in " + chunkId + " which is not a chunk loader.");
-        }
+    private boolean connectToDatabase() {
+        try {
+            this.connection = DriverManager.getConnection(this.conUrl, this.conUser, this.conPass);
+            this.connection.setSchema(this.conSchema);
+            return true;
+        } catch (SQLException ex) { }
+        return false;
     }
 
-    // @EventHandler
-    public void onStructureGrow(StructureGrowEvent ev) {
-        String chunkId = ChunkLoaderv1.chunkId(ev.getLocation().getChunk());
-        if (this.chunkLoaders.containsKey(chunkId)) {
-            this.getLogger().info("StructureGrowEvent in chunk loader chunk.");
-        } else {
-            this.getLogger().info("StructureGrowEvent in " + chunkId + " which is not a chunk loader.");
+    private boolean createDefaultTables() {
+        try {
+            String schema = getConfig().getString("postgresql_schema");
+            String username = getConfig().getString("postgresql_username");
+
+            // cl_players - id, uuid, max_chunks=-1, growth_multiplier=1
+            // cl_chunks - id (world_id:x:y), world_id, player_id, x, z, last_bump, last_updated, growth_multiplier=1, ttl_hours=4
+
+            /*
+             * ttl_millis (max time to progress)
+             * last_bump
+             *
+             * SELECT
+             * progress_interval = LEAST (last_bump + ttl_millis - last_update, ttl_millis)
+             */
+
+            Statement statement = this.connection.createStatement();
+            statement.addBatch("CREATE SCHEMA IF NOT EXISTS " + schema + " AUTHORIZATION " + username);
+            statement.addBatch("CREATE TABLE IF NOT EXISTS cl_players ( id SERIAL UNIQUE, uuid VARCHAR UNIQUE NOT NULL, max_chunks INT DEFAULT -1, PRIMARY KEY(id, uuid) )");
+            statement.addBatch("CREATE TABLE IF NOT EXISTS cl_chunks ( id SERIAL, world_uuid VARCHAR NOT NULL, player_id INT REFERENCES cl_players(id) ON DELETE CASCADE, " +
+                    "x INT NOT NULL, z INT NOT NULL, last_bump FLOAT8 DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000, last_update FLOAT8 DEFAULT EXTRACT(EPOCH FROM NOW()) * 1000, " +
+                    "growth_multiplier FLOAT4 DEFAULT 1.0, ttl_millis FLOAT8 DEFAULT 14400000, PRIMARY KEY(id, world_uuid, x, z) )");
+            statement.executeBatch();
+
+            return true;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
+        return false;
     }
 
 }

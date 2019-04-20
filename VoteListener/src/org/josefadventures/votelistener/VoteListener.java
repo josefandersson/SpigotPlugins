@@ -1,7 +1,6 @@
 package org.josefadventures.votelistener;
 
 import com.vexsoftware.votifier.model.VotifierEvent;
-import io.netty.handler.codec.http.HttpContentEncoder;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -14,12 +13,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import javax.security.auth.login.Configuration;
 import java.sql.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -129,6 +126,7 @@ public class VoteListener extends JavaPlugin implements Listener {
     public void onDisable() {
         try {
             this.connection.close();
+            getLogger().info("Closed PostgreSQL connection.");
         } catch (SQLException | NullPointerException ex) { }
     }
 
@@ -164,6 +162,11 @@ public class VoteListener extends JavaPlugin implements Listener {
                 }
                 return true;
             case "votelistener":
+                if (!sender.hasPermission("votelistener.admin") && !sender.isOp()) {
+                    sender.sendMessage("§cYou do not have access to this command.");
+                    return true;
+                }
+
                 if (args.length == 0) {
                     sender.sendMessage("§cNot enough arguments. Use §n/votelistener help §r§cfor a list of commands.");
                     return true;

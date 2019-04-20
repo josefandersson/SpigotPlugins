@@ -1,9 +1,10 @@
 name: TownyChunkLoader
-description: Allow players to keep chunks loaded within their own towns.
-version: 1.0
+description: Allow players to keep chunks loaded, letting crops and other grow when offline or away from town.
+version: 2.0
 author: DrDoof
+api-version: 1.13
 main: org.josefadventures.townychunkloader.TownyChunkLoader
-depend: [Towny]
+depend: [Towny,PostgreSQL]
 
 permissions:
   townychunkloader.command:
